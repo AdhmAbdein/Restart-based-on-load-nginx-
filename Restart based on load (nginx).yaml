@@ -1,0 +1,29 @@
+---
+  - name: Restart based on load (nginx)
+    hosts: all
+    become: yes
+    vars:
+      threshold: 2
+    tasks:
+      - name: ensure that nginx installed if not install it
+        yum:
+          name: nginx
+          state: present
+  
+      - name: check system load
+        command: uptime
+        register: load_value
+  
+      - name: extract the value of load
+        set_fact:
+          real_load_value: "{{ load_value.stdout.split('load average:')[1].split(',')[0]  | float }}"
+          # set_fact module in Ansible is used to define new variables or overwrite existing ones within the playbook
+  
+  
+      - name: restart nginx if it exceed the threshold
+        service:
+          name: nginx
+          state: restarted
+  
+        when: real_load_value | float > threshold
+  
